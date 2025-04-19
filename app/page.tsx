@@ -1,103 +1,162 @@
-import Image from "next/image";
+'use client';
+import {useState} from 'react';
 
-export default function Home() {
+type SquareProps = {
+  value: string | null;
+  onSquareClick: () => void;
+  isWinning: boolean;
+};
+function Square({value, onSquareClick, isWinning} : SquareProps) {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <button 
+    className={`square ${isWinning ? "winning-square" : ""}`}
+    onClick={onSquareClick}
+  >
+    {value}
+  </button>
+   ); 
+}
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+function calculateWinner(squares: (string | null)[]): 
+| { winner: string; winningLine: number[] } 
+| "draw" 
+| null { 
+  const lines = [
+    [0,1,2],
+    [3,4,5],
+    [6,7,8],
+    [0,3,6],
+    [1,4,7],
+    [2,5,8],
+    [0,4,8],
+    [2,4,6]
+  ];
+  for(let i = 0; i<lines.length; i++){
+    const[a,b,c] = lines[i];
+    if(squares[a] && squares[a] === squares[b] && squares[a] === squares[c]){
+      return {winner: squares[a] , winningLine: [a,b,c]};
+    }
+  }
+  if (squares.every((square) => square !== null)) {
+    return "draw";
+  }
+  return null;
+}
+
+type BoardProps = {
+  xIsNext: boolean;
+  squares: (string | null)[];
+  onPlay: (squares: (string | null)[]) => void;
+};
+
+function Board({xIsNext, squares, onPlay}: BoardProps){
+
+  function handleClick(i : number){
+    if(calculateWinner(squares) || squares[i] ){
+      return;
+    }
+    const nextSquares = squares.slice();     //slice() creates a new copy of the squares array after every move nd treat it as immutable
+    if(xIsNext){
+      nextSquares[i] = 'X';
+    }
+    else{
+      nextSquares[i] = 'O';
+    }
+    onPlay(nextSquares);
+  }
+
+  const result = calculateWinner(squares);
+  let winningLine: number[] = [];
+  let status;
+  if(result && result !== "draw"){
+    status = 'Winner: ' + result.winner;
+    winningLine = result.winningLine;
+  }
+  else if(result === "draw"){
+    status = 'Match Draw!'
+  }
+  else{
+    status = 'Player: ' + (xIsNext ? "X" : "O");
+  }
+   return ( 
+   <>
+   <div className = "status">{status}</div>
+   <div className="board-row">
+   {[0, 1, 2].map((i) => (
+        <Square
+          key={i}
+          value={squares[i]}
+          onSquareClick={() => handleClick(i)}
+          isWinning={winningLine.includes(i)}
+        />
+      ))}
+    </div>
+    <div className="board-row">
+      {[3, 4, 5].map((i) => (
+        <Square
+          key={i}
+          value={squares[i]}
+          onSquareClick={() => handleClick(i)}
+          isWinning={winningLine.includes(i)}
+        />
+      ))}
+    </div>
+    <div className="board-row">
+      {[6, 7, 8].map((i) => (
+        <Square
+          key={i}
+          value={squares[i]}
+          onSquareClick={() => handleClick(i)}
+          isWinning={winningLine.includes(i)}
+        />
+      ))}
+   </div>
+   </>
+  );
+}
+
+export default function Game(){
+  const [xIsNext, setXIsNext] = useState(true);
+  const[history, setHistory] = useState([Array(9).fill(null)]);
+  const currentSquares = history[history.length - 1];
+
+  function handlePlay(nextSquares: (string | null)[]): void{
+    setHistory([...history, nextSquares]);
+    setXIsNext(!xIsNext);
+  }
+  
+  // function jumpTo(nextMove : number) : void {
+  //   setHistory(history.slice(0, nextMove + 1));
+  //   setXIsNext(nextMove % 2 === 0);
+  // }
+
+  // const moves = history.map((squares, move) => {    //THIS IS FOR IF YOU WANT TO SHOW HISTORY
+  //   let description;
+  //   if(move > 0){
+  //     description = 'Go to move #' + move;
+  //   }
+  //   else{
+  //     description = 'Go to game start';
+  //   }
+  //   return (
+  //     <li key={move}>
+  //       <button onClick={() => jumpTo(move)}>{description}</button>
+  //     </li>
+  //   );
+  // });
+
+  return(
+    <div className = "game">
+      <div className = "game-board">
+        <Board xIsNext = {xIsNext} squares={currentSquares} onPlay={handlePlay}/>
+      </div>
+      {/* <div className="game-info">
+        <ol>{moves}</ol>
+      </div> */}
     </div>
   );
 }
+
+
+
+
